@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hiển thị PDF từ Base64</title>
+    <script src="https://mozilla.github.io/pdf.js/build/pdf.js"></script>
+</head>
+<body>
+    <button id="previewBtn">Xem PDF</button>
+    <div id="pdfContainer"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('previewBtn').addEventListener('click', function() {
+                var apiURL = 'http://localhost:8080/api/pdfContent';
+
+                fetch(apiURL)
+                    .then(response => response.text())
+                    .then(base64Data => {
+                        var pdfDoc = new PDFDocument(base64Data);
+                        var blobURL = pdfDoc.getBlobURL();
+
+                        var pdfContainer = document.getElementById('pdfContainer');
+                        pdfContainer.innerHTML = '<embed src="' + blobURL + '" type="application/pdf" width="100%" height="600px"/>';
+                    })
+                    .catch(error => {
+                        console.error('Lỗi khi lấy dữ liệu PDF:', error);
+                    });
+            });
+
+            class PDFDocument {
+                constructor(base64Data) {
+                    this.base64Data = base64Data;
+                }
+
+                getBlobURL() {
+                    var byteCharacters = atob(this.base64Data);
+                    var byteArrays = [];
+
+                    for (var offset = 0; offset < byteCharacters.length; offset += 512) {
+                        var slice = byteCharacters.slice(offset, offset + 512);
+
+                        var byteNumbers = new Array(slice.length);
+                        for (var i = 0; i < slice.length; i++) {
+                            byteNumbers[i] = slice.charCodeAt(i);
+                        }
+
+                        var byteArray = new Uint8Array(byteNumbers);
+                        byteArrays.push(byteArray);
+                    }
+
+                    var blob = new Blob(byteArrays, { type: 'application/pdf' });
+                    var blobURL = URL.createObjectURL(blob);
+                    return blobURL;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
